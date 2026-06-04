@@ -1,29 +1,30 @@
 #pragma once
 
 //klasa reprezentująca pojedynczy element listy
+template <typename T>
 class ListElement
 {
 	private:
-		int value; //wartość przechowywana w liście
-		ListElement* previousElement; //wskaźnik na poprzedni element
-		ListElement* nextElement; //wskaźnik na następny element
+		T value; //wartość przechowywana w liście
+		ListElement<T>* previousElement; //wskaźnik na poprzedni element
+		ListElement<T>* nextElement; //wskaźnik na następny element
 	public:
 
-		ListElement(int value, ListElement* previousElement, ListElement* nextElement) {
+		ListElement(T value, ListElement<T>* previousElement, ListElement<T>* nextElement) {
 			this->value = value;
 			this->nextElement = nextElement;
 			this->previousElement = previousElement;
 		}
 
-		void setValue(int value) {
+		void setValue(T value) {
 			this->value = value;
 		}
 
-		void setPreviousElement(ListElement* previousElement) {
+		void setPreviousElement(ListElement<T>* previousElement) {
 			this->previousElement = previousElement;
 		}
 
-		void setNextElement(ListElement* nextElement) {
+		void setNextElement(ListElement<T>* nextElement) {
 			this->nextElement = nextElement;
 		}
 
@@ -31,12 +32,11 @@ class ListElement
 			return value;
 		}
 
-		ListElement* getPreviousElement() {
+		ListElement<T>* getPreviousElement() {
 			return previousElement;
 		}
 
-		ListElement* getNextElement() {
+		ListElement<T>* getNextElement() {
 			return nextElement;
 		}
 };
-

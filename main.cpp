@@ -3,6 +3,7 @@
 #include "Parameters.h"
 #include "fileHandler.h"
 #include "List.h"
+#include "algorithms.h"
 
 int N = 1000;
 
@@ -14,17 +15,17 @@ int* convert(std::string* array, int size) {
     return intArray;
 }
 
-List* arrayToList(int* array, int size){
-    List* list = new List(nullptr, nullptr, 0);
+List<int>* arrayToList(int* array, int size){
+    List<int>* list = new List<int>(nullptr, nullptr, 0);
     for (int i = 0; i < size; i++){
         list->addElement(array[i]);
     }
     return list;
 }
 
-int* listToArray(List* list, int size){
+int* listToArray(List<int>* list, int size){
     int* array = new int[size];
-    ListElement* element = list->getFirstElement();
+    ListElement<int>* element = list->getFirstElement();
     int i = 0;
     while (element != nullptr && i < size){
         array[i] = element->getValue();
@@ -34,20 +35,74 @@ int* listToArray(List* list, int size){
     return array;
 }
 
-void generateArray(int* array){
+int* arrayToMatrix(int* array, int e){
+    int* matrix = new int[e * (Parameters::vertexCount + 1)];
+    int edgeCount = 0;
     for(int i = 0; i < Parameters::vertexCount; i++){
-        for(int j = 0; j < Parameters::vertexCount; j++){
-            if(i == j){
+        for (int j = 0; j < i; j++){
+            if(array[i * Parameters::vertexCount + j] > 0){
+                for(int k = 0; k < Parameters::vertexCount; k++){
+                    if(k == i || k == j){
+                        matrix[edgeCount * (Parameters::vertexCount + 1) + k] = 1;
+                    }
+                    else{
+                        matrix[edgeCount * (Parameters::vertexCount + 1) + k] = -1;
+                    }
+                }
+                matrix[edgeCount * (Parameters::vertexCount + 1) + Parameters::vertexCount] = array[i * Parameters::vertexCount + j];
+                edgeCount++;
+            }
+        }
+    }
+    return matrix;
+}
+
+void generateArray(int* array, int edgesCount){
+    if(Parameters::density < 50){
+        for(int i = 0; i < Parameters::vertexCount; i++){
+            for(int j = 0; j < Parameters::vertexCount; j++){
                 array[i * Parameters::vertexCount + j] = -1;
             }
-            else {
-                array[i * Parameters::vertexCount + j] = rand();
+        }
+        for(int i = 0; i < edgesCount; i++) {
+            int firstVertex = -1;
+            int secondVertex = -1;
+            do{
+                firstVertex = rand() % Parameters::vertexCount;
+                secondVertex = rand() % Parameters::vertexCount;
+                while (firstVertex == secondVertex){
+                    secondVertex = rand() % Parameters::vertexCount;
+                }
+            } while(array[firstVertex * Parameters::vertexCount + secondVertex] != -1);
+            array[firstVertex * Parameters::vertexCount + secondVertex] = rand() + 1;
+            array[secondVertex * Parameters::vertexCount + firstVertex] = array[firstVertex * Parameters::vertexCount + secondVertex];
+        }
+    }
+    else{
+        for(int i = 0; i < Parameters::vertexCount; i++){
+            array[i * Parameters::vertexCount + i] = -1;
+            for (int j = 0; j < i; j++){
+                array[i * Parameters::vertexCount + j] = rand() + 1;
+                array[j * Parameters::vertexCount + i] = array[i * Parameters::vertexCount + j];
             }
+        }
+        for(int i = (Parameters::vertexCount * (Parameters::vertexCount - 1)) / 2; i > edgesCount; i--) {
+            int firstVertex = -1;
+            int secondVertex = -1;
+            do{
+                firstVertex = rand() % Parameters::vertexCount;
+                secondVertex = rand() % Parameters::vertexCount;
+                while (firstVertex == secondVertex){
+                    secondVertex = rand() % Parameters::vertexCount;
+                }
+            } while(array[firstVertex * Parameters::vertexCount + secondVertex] == -1);
+            array[firstVertex * Parameters::vertexCount + secondVertex] = -1;
+            array[secondVertex * Parameters::vertexCount + firstVertex] = -1;
         }
     }
 }
 
-long long runSort(int* array, int N) {
+long long runSort(int* array, int N, int E) {
     auto start = std::chrono::high_resolution_clock::now();
 
     if(array && N){
@@ -55,7 +110,7 @@ long long runSort(int* array, int N) {
     }
     switch (Parameters::algorithm) {
         case Parameters::Algorithms::prim:
-            std::cout << "Prim algorithm for matrix\n";
+            algorithms::primAlgorithm(array, N, E);
             break;
         case Parameters::Algorithms::kruskal:
             std::cout << "Kruskal algorithm for matrix\n";
@@ -87,7 +142,7 @@ long long runSort(int* array, int N) {
     return duration.count();
 }
 
-long long runSortList(List* list, int N) {
+long long runSortList(List<int>* list, int N) {
     auto start = std::chrono::high_resolution_clock::now();
     if(list && N){
         std::cout << std::endl;
@@ -129,7 +184,7 @@ long long runSortList(List* list, int N) {
 void testMatrix(std::string* fileArray, int N) {
     int* array = convert(fileArray, N);
 
-    runSort(array, N);
+    runSort(array, N, 10);
 
     if (Parameters::outputFile != "") {
         fileHandler::saveSorted(array, Parameters::outputFile, N);
@@ -140,7 +195,7 @@ void testMatrix(std::string* fileArray, int N) {
 
 void testList(std::string* fileArray, int N) {
     int* array = convert(fileArray, N);
-    List* list = arrayToList(array, N);
+    List<int>* list = arrayToList(array, N);
 
     runSortList(list, N);
 
@@ -154,12 +209,19 @@ void testList(std::string* fileArray, int N) {
 }
 
 void benchmarkMatrix(Result* results) {
+    std::cout << "1\n";
+    int edgesCount = ((Parameters::vertexCount * (Parameters::vertexCount - 1)) / 2) / Parameters::density;
     int* array = new int[Parameters::vertexCount * Parameters::vertexCount];
-    generateArray(array);
     for(int i = 0; i < Parameters::iterations; i++){
-        long long time = runSort(array, Parameters::vertexCount);
+        generateArray(array, edgesCount);
+        std::cout << "2\n";
+        int* matrix = arrayToMatrix(array, edgesCount);
+        std::cout << "3\n";
+        long long time = runSort(matrix, Parameters::vertexCount, edgesCount);
         results[i].setResult(time, Parameters::vertexCount, true);
+        delete[] matrix;
     }
+    std::cout << "4\n";
 
     if (Parameters::resultsFile != "") {
         fileHandler::writeResults(Parameters::resultsFile, results, Parameters::iterations, Parameters::vertexCount);
@@ -170,8 +232,8 @@ void benchmarkMatrix(Result* results) {
 
 void benchmarkList(Result* results) {
     int* array = new int[Parameters::vertexCount];
-    generateArray(array);
-    List* list = arrayToList(array, Parameters::vertexCount);
+    //generateArray(array);
+    List<int>* list = arrayToList(array, Parameters::vertexCount);
 
     for(int i = 0; i < Parameters::iterations; i++){
         long long time = runSortList(list, Parameters::vertexCount);
@@ -220,6 +282,10 @@ void benchmark(){
         std::cout << "ERROR!!! iteration must be at least 1";
         return;
     }
+    if (Parameters::density <= 0 || Parameters::density > 100){
+        std::cout << "ERROR!!! density must be greater than 0 and not greater than 100";
+        return;
+    }
     if(Parameters::resultsFile == ""){
         std::cout << "ERROR!!! No resultsFile chosen";
         return;
@@ -261,7 +327,7 @@ int main(int argc, char **argv) {
             singleFile();
             break;
         case Parameters::RunModes::benchmark:
-            //benchmark();
+            benchmark();
             break;
         case Parameters::RunModes::help:
             Parameters::help();
