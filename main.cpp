@@ -5,7 +5,8 @@
 #include "List.h"
 #include "algorithms.h"
 
-int N = 1000;
+int V = 1000;
+int E = 1000;
 
 int* convert(std::string* array, int size) {
     int* intArray = new int[size];
@@ -60,11 +61,18 @@ int* arrayToMatrix(int* array, int e){
 void generateArray(int* array, int edgesCount){
     if(Parameters::density < 50){
         for(int i = 0; i < Parameters::vertexCount; i++){
-            for(int j = 0; j < Parameters::vertexCount; j++){
-                array[i * Parameters::vertexCount + j] = -1;
+            for(int j = 0; j < i; j++){
+                if (j == i + 1 || i == j + 1){
+                    array[i * Parameters::vertexCount + j] = rand() + 1;
+                    array[j * Parameters::vertexCount + i] = array[i * Parameters::vertexCount + j];
+                }
+                else {
+                    array[i * Parameters::vertexCount + j] = -1;
+                    array[j * Parameters::vertexCount + i] = -1;
+                }
             }
         }
-        for(int i = 0; i < edgesCount; i++) {
+        for(int i = Parameters::vertexCount - 1; i < edgesCount; i++) {
             int firstVertex = -1;
             int secondVertex = -1;
             do{
@@ -92,7 +100,7 @@ void generateArray(int* array, int edgesCount){
             do{
                 firstVertex = rand() % Parameters::vertexCount;
                 secondVertex = rand() % Parameters::vertexCount;
-                while (firstVertex == secondVertex){
+                while (firstVertex == secondVertex || firstVertex == secondVertex + 1 || secondVertex == firstVertex + 1){
                     secondVertex = rand() % Parameters::vertexCount;
                 }
             } while(array[firstVertex * Parameters::vertexCount + secondVertex] == -1);
@@ -102,15 +110,15 @@ void generateArray(int* array, int edgesCount){
     }
 }
 
-long long runSort(int* array, int N, int E) {
+long long runSort(int* array, int* mst, int V, int E) {
     auto start = std::chrono::high_resolution_clock::now();
 
-    if(array && N){
+    if(array && V){
         std::cout << std::endl;
     }
     switch (Parameters::algorithm) {
         case Parameters::Algorithms::prim:
-            algorithms::primAlgorithm(array, N, E);
+            algorithms::primAlgorithm(array, mst, V, E);
             break;
         case Parameters::Algorithms::kruskal:
             std::cout << "Kruskal algorithm for matrix\n";
@@ -138,13 +146,20 @@ long long runSort(int* array, int N, int E) {
     if (Parameters::runMode == Parameters::RunModes::singleFile){
         std::cout << "Time: " << duration.count() << "us\n";
     }
+        
+    for(int i = 0; i < V - 1; i++){
+        for (int j = 0; j < V + 1; j++){
+            std::cout << mst[i * (V + 1) + j] << ", ";
+        }
+        std::cout << std::endl;
+    }
 
     return duration.count();
 }
 
-long long runSortList(List<int>* list, int N) {
+long long runSortList(List<int>* list, int V) {
     auto start = std::chrono::high_resolution_clock::now();
-    if(list && N){
+    if(list && V){
         std::cout << std::endl;
     }
     switch (Parameters::algorithm) {
@@ -181,27 +196,30 @@ long long runSortList(List<int>* list, int N) {
     return duration.count();
 }
 
-void testMatrix(std::string* fileArray, int N) {
-    int* array = convert(fileArray, N);
+void testMatrix(int* array, int* mst, int V, int E) {
 
-    runSort(array, N, 10);
-
-    if (Parameters::outputFile != "") {
-        fileHandler::saveSorted(array, Parameters::outputFile, N);
+    runSort(array, mst, V, E);
+        
+    for(int i = 0; i < V - 1; i++){
+        for (int j = 0; j < V + 1; j++){
+            std::cout << mst[i * (V + 1) + j] << ", ";
+        }
+        std::cout << std::endl;
     }
 
-    delete[] array;
+    if (Parameters::outputFile != "") {
+        fileHandler::saveSorted(mst, Parameters::outputFile, V, V - 1);
+    }
 }
 
-void testList(std::string* fileArray, int N) {
-    int* array = convert(fileArray, N);
-    List<int>* list = arrayToList(array, N);
+void testList(int* array, int V) {
+    List<int>* list = arrayToList(array, V);
 
-    runSortList(list, N);
+    runSortList(list, V);
 
     if (Parameters::outputFile != "") {
-        array = listToArray(list, N);
-        fileHandler::saveSorted(array, Parameters::outputFile, N);
+        array = listToArray(list, V);
+        fileHandler::saveSorted(array, Parameters::outputFile, V, E);
     }
 
     delete list;
@@ -209,25 +227,23 @@ void testList(std::string* fileArray, int N) {
 }
 
 void benchmarkMatrix(Result* results) {
-    std::cout << "1\n";
-    int edgesCount = ((Parameters::vertexCount * (Parameters::vertexCount - 1)) / 2) / Parameters::density;
+    int edgesCount = ((Parameters::vertexCount * (Parameters::vertexCount - 1)) / 2) * Parameters::density / 100;
     int* array = new int[Parameters::vertexCount * Parameters::vertexCount];
+    int* mst = new int[(V - 1) * (V + 1)];
     for(int i = 0; i < Parameters::iterations; i++){
         generateArray(array, edgesCount);
-        std::cout << "2\n";
         int* matrix = arrayToMatrix(array, edgesCount);
-        std::cout << "3\n";
-        long long time = runSort(matrix, Parameters::vertexCount, edgesCount);
+        long long time = runSort(matrix, mst, Parameters::vertexCount, edgesCount);
         results[i].setResult(time, Parameters::vertexCount, true);
         delete[] matrix;
     }
-    std::cout << "4\n";
 
     if (Parameters::resultsFile != "") {
         fileHandler::writeResults(Parameters::resultsFile, results, Parameters::iterations, Parameters::vertexCount);
     }
 
     delete[] array;
+    delete[] mst;
 }
 
 void benchmarkList(Result* results) {
@@ -245,7 +261,6 @@ void benchmarkList(Result* results) {
     }
 
     delete list;
-    delete[] array;
 }
 
 //funkcja uruchamiająca odpowiedni rodzaj testu w zależności od wybranego typu i struktury danych oraz wywołująca odczytanie danych z pliku
@@ -254,26 +269,28 @@ void singleFile(){
         std::cout << "ERROR!!! No inputFile chosen";
         return;
     }
-    std::string* array = fileHandler::readFile(Parameters::inputFile, N);
+    int* array = fileHandler::readFile(Parameters::inputFile, V, E);
     if (array == nullptr) {
         return;
     }
+    int* mst = new int[(V - 1) * (V + 1)];
     switch (Parameters::structure){
         case Parameters::Structures::incidenceMatrix:
-            testMatrix(array, N);
+            testMatrix(array, mst, V, E);
             break;
         case Parameters::Structures::adjacencyList:
-            testList(array, N);
+            testList(array, V);
             break;
         case Parameters::Structures::allStructures:
-            testMatrix(array, N);
-            testList(array, N);
+            testMatrix(array, mst, V, E);
+            testList(array, V);
             break;
         default:
             std::cout << "ERROR!!! The structure is not supported.";
             return;
     }
     delete[] array;
+    delete[] mst;
 }
 
 //funkcja uruchamiająca odpowiedni rodzaj benchmarku w zależności od wybranego typu i struktury danych oraz wywołująca wypisanie danych do pliku
@@ -295,7 +312,7 @@ void benchmark(){
         return;
     }
     Result* results = new Result[Parameters::iterations];
-    N = Parameters::vertexCount;
+    V = Parameters::vertexCount;
     switch (Parameters::structure){
         case Parameters::Structures::incidenceMatrix:
             benchmarkMatrix(results);

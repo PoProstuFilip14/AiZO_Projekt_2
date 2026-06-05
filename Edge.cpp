@@ -16,6 +16,10 @@ int Edge::getWeight(){
     return weight;
 }
 
+void Edge::setWeight(int weight){
+    this->weight = weight;
+}
+
 int Edge::getFirstVertex(){
     return firstVertex;
 }

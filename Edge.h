@@ -13,6 +13,8 @@ class Edge
 
 		int getWeight();
 
+		void setWeight(int weight);
+
 		int getFirstVertex();
 
 		int getSecondVertex();

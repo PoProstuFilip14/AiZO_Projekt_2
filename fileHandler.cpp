@@ -66,7 +66,7 @@ namespace fileHandler{
     }
             
     //funkcja czytająca dane wejściowe z pliku
-    std::string* readFile(std::string fileName, int& size) {
+    int* readFile(std::string fileName, int& v, int& e) {
         std::ifstream ff(fileName);
 
         if (!ff) {
@@ -74,17 +74,28 @@ namespace fileHandler{
             return nullptr;
         }
 
-        ff >> size;
+        ff >> v >> e;
 
-        std::string* tab = new std::string[size];
+        int* matrix = new int[e * (v + 1)];
+        for (int i = 0; i < e; i++) {
+            for (int j = 0; j < v + 1; j++) {
+                matrix[i * (v + 1) + j] = -1;
+            }
+        }
 
-        for (int i = 0; i < size; i++) {
-            ff >> tab[i];
+        int firstVertex, secondVertex, weight;
+
+        for (int i = 0; i < e; i++) {
+            ff >> firstVertex >> secondVertex >> weight;
+
+            matrix[i * (v + 1) + v] = weight;
+            matrix[i * (v + 1) + firstVertex] = 1;
+            matrix[i * (v + 1) + secondVertex] = 1;
         }
 
         ff.close();
 
-        return tab;
+        return matrix;
     }
 
     //funkcja zapisująca wyniki pomiarów do pliku
@@ -131,5 +142,40 @@ namespace fileHandler{
             ftimes << "\n";
         }
         ftimes.close();
+    }
+    
+    //funkcja zapisująca posortowane dane do pliku
+    void saveSorted(int* matrix, std::string fileName, int v, int e){
+        
+        for(int i = 0; i < v - 1; i++){
+            for (int j = 0; j < v + 1; j++){
+                std::cout << matrix[i * (v + 1) + j] << ", ";
+            }
+            std::cout << std::endl;
+        }
+        deleteFile(fileName);
+        std::fstream ftimes;
+        std::fstream ferrors;
+        ftimes.open(fileName, std::ios::out | std::ios::app);
+        //checking if files were found and opened correctly
+        if (!ftimes.is_open()) {
+            std::cout << "File not found!!!\n";
+            return;
+        }
+        ftimes << v << "    " << e << "\n";
+        for (int i = 0; i < e; i++) {
+            int firstVertex = -1;
+            int secondVertex = -1;
+            int vertexCounter = 0;
+            for(int j = 0; j < v; j++){
+                if (matrix[i * (v + 1) + j] == 1){
+                    if(vertexCounter == 0) firstVertex = j;
+                    else secondVertex = j;
+                    vertexCounter++;
+                }
+            }
+            int weigth = matrix[i * (v + 1) + v];
+            ftimes << firstVertex << "  " << secondVertex << "  " << weigth << "\n";
+        }
     };
 };
