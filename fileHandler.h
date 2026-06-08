@@ -7,8 +7,6 @@
 namespace fileHandler{
     double getAverageTime(Result* results, int iterations);
 
-    double getErrorPercentage(Result* results, int iterations);
-
     int getMax(Result* results, int iterations);
 
     int getMin(Result* results, int iterations);

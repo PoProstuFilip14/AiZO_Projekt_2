@@ -1,18 +1,16 @@
 #include "Result.h"
 #include <ctime>
 
-Result::Result(long long  time, int size, bool error) {
+Result::Result(long long  time, int size) {
 	this->time = time;
     this->timestamp = std::time(NULL);
 	this->size = size;
-	this->error = error;
 }
 
-void Result::setResult(long long  time, int size, bool error) {
+void Result::setResult(long long  time, int size) {
 	this->time = time;
     this->timestamp = std::time(NULL);
 	this->size = size;
-	this->error = error;
 }
 
 long long Result::getTime(){
@@ -25,8 +23,4 @@ time_t Result::getTimestamp(){
 
 int Result::getSize(){
 	return size;
-}
-
-bool Result::getError(){
-	return error;
 }

@@ -16,22 +16,50 @@ int* convert(std::string* array, int size) {
     return intArray;
 }
 
-List<int>* arrayToList(int* array, int size){
-    List<int>* list = new List<int>(nullptr, nullptr, 0);
-    for (int i = 0; i < size; i++){
-        list->addElement(array[i]);
+List<List<std::pair<int, int>>*>* arrayToList(int* array, int v, int e){
+    List<List<std::pair<int, int>>*>* list = new List<List<std::pair<int, int>>*>(nullptr, nullptr, 0);
+    for(int i = 0; i < v; i++){
+        list->addElement(new List<std::pair<int, int>>(nullptr, nullptr, 0));
+    }
+    for (int i = 0; i < e; i++){
+        int firstVertex = -1;
+        int secondVertex = -1;
+        int vertexCounter = 0;
+        for(int j = 0; j < v; j++){
+            if (array[i * (v + 1) + j] == 1){
+                if(vertexCounter == 0) firstVertex = j;
+                else secondVertex = j;
+                vertexCounter++;
+            }
+        }
+        int weigth = array[i * (v + 1) + v];
+        list->getElementDouble(firstVertex)->addElement({secondVertex, weigth});
+        list->getElementDouble(secondVertex)->addElement({firstVertex, weigth});
     }
     return list;
 }
 
-int* listToArray(List<int>* list, int size){
-    int* array = new int[size];
-    ListElement<int>* element = list->getFirstElement();
+int* listToArray(List<List<std::pair<int, int>>*>* list, int v){
+    int* array = new int[(v - 1) * (v + 1)];
+    for(int i = 0; i < v - 1; i++){
+        for (int j = 0; j < v + 1; j++){
+            array[i * (v + 1) + j] = -1;
+        }
+    }
+    int vertex = 0;
     int i = 0;
-    while (element != nullptr && i < size){
-        array[i] = element->getValue();
-        element = element->getNextElement();
-        i++;
+    ListElement<List<std::pair<int, int>>*>* currentList = list->getFirstElement();
+    while(currentList != nullptr){
+        ListElement<std::pair<int, int>>* currentElement = list->getElementDouble(vertex)->getFirstElement();
+        while(currentElement != nullptr){
+            array[i * (v + 1) + v] = currentElement->getValue().second;
+            array[i * (v + 1) + vertex] = 1;
+            array[i * (v + 1) + currentElement->getValue().first] = 1;
+            i++;
+            currentElement = currentElement->getNextElement();
+        }
+        currentList = currentList->getNextElement();
+        vertex++;
     }
     return array;
 }
@@ -110,15 +138,15 @@ void generateArray(int* array, int edgesCount){
     }
 }
 
-long long runSort(int* array, int* mst, int V, int E) {
+long long runSort(int* array, int* mst, int v, int e) {
     auto start = std::chrono::high_resolution_clock::now();
 
-    if(array && V){
+    if(array && v){
         std::cout << std::endl;
     }
     switch (Parameters::algorithm) {
         case Parameters::Algorithms::prim:
-            algorithms::primAlgorithm(array, mst, V, E);
+            algorithms::primAlgorithm(array, mst, v, e);
             break;
         case Parameters::Algorithms::kruskal:
             std::cout << "Kruskal algorithm for matrix\n";
@@ -146,25 +174,18 @@ long long runSort(int* array, int* mst, int V, int E) {
     if (Parameters::runMode == Parameters::RunModes::singleFile){
         std::cout << "Time: " << duration.count() << "us\n";
     }
-        
-    for(int i = 0; i < V - 1; i++){
-        for (int j = 0; j < V + 1; j++){
-            std::cout << mst[i * (V + 1) + j] << ", ";
-        }
-        std::cout << std::endl;
-    }
 
     return duration.count();
 }
 
-long long runSortList(List<int>* list, int V) {
+long long runSortList(List<List<std::pair<int, int>>*>* list, List<List<std::pair<int, int>>*>* mst, int v, int e) {
     auto start = std::chrono::high_resolution_clock::now();
-    if(list && V){
+    if(list && v){
         std::cout << std::endl;
     }
     switch (Parameters::algorithm) {
         case Parameters::Algorithms::prim:
-            std::cout << "Prim algorithm for list\n";
+            algorithms::primAlgorithm(list, mst, v, e);
             break;
         case Parameters::Algorithms::kruskal:
             std::cout << "Kruskal algorithm for list\n";
@@ -196,34 +217,32 @@ long long runSortList(List<int>* list, int V) {
     return duration.count();
 }
 
-void testMatrix(int* array, int* mst, int V, int E) {
+void testMatrix(int* array, int v, int e) {
+    int* mst = new int[(v - 1) * (v + 1)];
 
-    runSort(array, mst, V, E);
-        
-    for(int i = 0; i < V - 1; i++){
-        for (int j = 0; j < V + 1; j++){
-            std::cout << mst[i * (V + 1) + j] << ", ";
-        }
-        std::cout << std::endl;
-    }
+    runSort(array, mst, v, e);
 
     if (Parameters::outputFile != "") {
-        fileHandler::saveSorted(mst, Parameters::outputFile, V, V - 1);
+        fileHandler::saveSorted(mst, Parameters::outputFile, v, v - 1);
     }
+
+    delete[] mst;
 }
 
-void testList(int* array, int V) {
-    List<int>* list = arrayToList(array, V);
+void testList(int* array, int v, int e) {
+    List<List<std::pair<int, int>>*>* list = arrayToList(array, v, e);
+    List<List<std::pair<int, int>>*>* mst = new List<List<std::pair<int, int>>*>(nullptr, nullptr, 0);;
 
-    runSortList(list, V);
+    runSortList(list, mst, v, e);
 
     if (Parameters::outputFile != "") {
-        array = listToArray(list, V);
-        fileHandler::saveSorted(array, Parameters::outputFile, V, E);
+        int* matrix = listToArray(mst, v);
+        fileHandler::saveSorted(matrix, Parameters::outputFile, v, v - 1);
+        delete[] matrix;
     }
 
     delete list;
-    delete[] array;
+    delete mst;
 }
 
 void benchmarkMatrix(Result* results) {
@@ -234,7 +253,7 @@ void benchmarkMatrix(Result* results) {
         generateArray(array, edgesCount);
         int* matrix = arrayToMatrix(array, edgesCount);
         long long time = runSort(matrix, mst, Parameters::vertexCount, edgesCount);
-        results[i].setResult(time, Parameters::vertexCount, true);
+        results[i].setResult(time, Parameters::vertexCount);
         delete[] matrix;
     }
 
@@ -247,20 +266,25 @@ void benchmarkMatrix(Result* results) {
 }
 
 void benchmarkList(Result* results) {
-    int* array = new int[Parameters::vertexCount];
-    //generateArray(array);
-    List<int>* list = arrayToList(array, Parameters::vertexCount);
+    int* array = new int[Parameters::vertexCount * Parameters::vertexCount];
 
     for(int i = 0; i < Parameters::iterations; i++){
-        long long time = runSortList(list, Parameters::vertexCount);
-        results[i].setResult(time, Parameters::vertexCount, true);
+        int edgesCount = ((Parameters::vertexCount * (Parameters::vertexCount - 1)) / 2) * Parameters::density / 100;
+        generateArray(array, edgesCount);
+        int* matrix = arrayToMatrix(array, edgesCount);
+        List<List<std::pair<int, int>>*>* list = arrayToList(matrix, Parameters::vertexCount, edgesCount);
+        List<List<std::pair<int, int>>*>* mst = new List<List<std::pair<int, int>>*>(nullptr, nullptr, 0);
+        long long time = runSortList(list, mst, Parameters::vertexCount, edgesCount);
+        results[i].setResult(time, Parameters::vertexCount);
+
+        delete list;
+        delete mst;
+        delete[] matrix;
     }
 
     if (Parameters::resultsFile != "") {
         fileHandler::writeResults(Parameters::resultsFile, results, Parameters::iterations, Parameters::vertexCount);
     }
-
-    delete list;
 }
 
 //funkcja uruchamiająca odpowiedni rodzaj testu w zależności od wybranego typu i struktury danych oraz wywołująca odczytanie danych z pliku
@@ -273,24 +297,22 @@ void singleFile(){
     if (array == nullptr) {
         return;
     }
-    int* mst = new int[(V - 1) * (V + 1)];
     switch (Parameters::structure){
         case Parameters::Structures::incidenceMatrix:
-            testMatrix(array, mst, V, E);
+            testMatrix(array, V, E);
             break;
         case Parameters::Structures::adjacencyList:
-            testList(array, V);
+            testList(array, V, E);
             break;
         case Parameters::Structures::allStructures:
-            testMatrix(array, mst, V, E);
-            testList(array, V);
+            testMatrix(array, V, E);
+            testList(array, V, E);
             break;
         default:
             std::cout << "ERROR!!! The structure is not supported.";
             return;
     }
     delete[] array;
-    delete[] mst;
 }
 
 //funkcja uruchamiająca odpowiedni rodzaj benchmarku w zależności od wybranego typu i struktury danych oraz wywołująca wypisanie danych do pliku

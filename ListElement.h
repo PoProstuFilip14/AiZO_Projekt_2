@@ -28,7 +28,7 @@ class ListElement
 			this->nextElement = nextElement;
 		}
 
-		int getValue() {
+		T getValue() {
 			return value;
 		}
 

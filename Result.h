@@ -9,17 +9,14 @@ class Result
 		long long time; //zmierzony czas
         time_t timestamp; //data wykonania pomiaru
 		int size; //rozmiar danych, dla którego wykonano pomiar
-        bool error; //zmienna boolowska informująca o tym czy algorytm zadziałał błędnie
 	public:
-		Result(long long  time = -1, int size = -1, bool error = false);
+		Result(long long  time = -1, int size = -1);
 
-		void setResult(long long  time, int size, bool error);
+		void setResult(long long  time, int size);
 
 		long long  getTime();
 
 		time_t getTimestamp();
 
 		int getSize();
-
-		bool getError();
 };

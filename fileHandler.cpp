@@ -12,10 +12,8 @@ namespace fileHandler{
         long long average = 0;
         int count = 0;
         for(int i = 0; i < iterations; i++){
-            if(results[i].getError()){
-                average += results[i].getTime();
-                count++;
-            }
+            average += results[i].getTime();
+            count++;
         }
 
         if (count == 0) return 0;
@@ -23,24 +21,11 @@ namespace fileHandler{
         return (double)average / count;
     }
 
-    //oblicznie procentu błędnych wyników dla serii pomiarowej
-    double getErrorPercentage(Result* results, int iterations){
-        int count = 0;
-
-        for(int i = 0; i < iterations; i++){
-            if(results[i].getError()){
-                count++;
-            }
-        }
-
-        return 100 - ((double)count / iterations * 100);
-    }
-
     //znajdywanie maksymalnej wartości dla serii pomiarowej
     int getMax(Result* results, int iterations){
         long long max = -1;
         for(int i = 0; i < iterations; i++){
-            if(results[i].getTime() > max && results[i].getError()){
+            if(results[i].getTime() > max){
                 max = results[i].getTime();
             }
         }
@@ -52,7 +37,7 @@ namespace fileHandler{
     int getMin(Result* results, int iterations){
         long long min = std::numeric_limits<long long>::max();
         for(int i = 0; i < iterations; i++){
-            if(results[i].getTime() < min && results[i].getError()){
+            if(results[i].getTime() < min){
                 min = results[i].getTime();
             }
         }
@@ -121,14 +106,12 @@ namespace fileHandler{
         ftimes << fileHandler::getAverageTime(results, iterations) << ",";
         ftimes << fileHandler::getMax(results, iterations) << ",";
         ftimes << fileHandler::getMin(results, iterations) << ",";
-        ftimes << fileHandler::getErrorPercentage(results, iterations) << ",";
         ftimes << "\n";
         
         ftimes << "Lp,";
         ftimes << "Rozmiar,";
         ftimes << "Czas,";
         ftimes << "Data,";
-        ftimes << "Blad,";
         ftimes << "\n";
         for (int i = 0; i < iterations; i++) {
             std::time_t t = results[i].getTimestamp();
@@ -138,7 +121,6 @@ namespace fileHandler{
             ftimes << structureSize << ",";
             ftimes << results[i].getTime() << ",";
             ftimes << std::put_time(tm, "%Y-%m-%d %H:%M:%S") << ",";
-            ftimes << results[i].getError() << ",";
             ftimes << "\n";
         }
         ftimes.close();
@@ -146,13 +128,6 @@ namespace fileHandler{
     
     //funkcja zapisująca posortowane dane do pliku
     void saveSorted(int* matrix, std::string fileName, int v, int e){
-        
-        for(int i = 0; i < v - 1; i++){
-            for (int j = 0; j < v + 1; j++){
-                std::cout << matrix[i * (v + 1) + j] << ", ";
-            }
-            std::cout << std::endl;
-        }
         deleteFile(fileName);
         std::fstream ftimes;
         std::fstream ferrors;

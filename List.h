@@ -75,7 +75,7 @@ class List
         }
 
         //funkcja zwracająca wartość wybranego elemntu z listy dwukierunkowej
-        int getElementDouble(int position){
+        T getElementDouble(int position){
             if (position >= size || position < 0){
                 return std::numeric_limits<T>::max();
             }

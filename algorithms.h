@@ -20,7 +20,7 @@ namespace algorithms {
         }
     }
 
-    void primAlgorithm(int*& matrix, int* mst, int v, int e){
+    void primAlgorithm(int* matrix, int* mst, int v, int e){
         for(int i = 0; i < v - 1; i++){
             for(int j = 0; j < v + 1; j++){
                 mst[i * (v + 1) + j] = -1;
@@ -63,12 +63,45 @@ namespace algorithms {
                 }
             }
         }
+
+        delete[] edges;
+        delete[] isUsed;
+        delete[] isVisited;
+    }
+
+    void primAlgorithm(List<List<std::pair<int, int>>*>* list, List<List<std::pair<int, int>>*>* mst, int v, int e){
         
+        for(int i = 0; i < v; i++){
+            mst->addElementDouble(new List<std::pair<int, int>>(nullptr, nullptr, 0));
+        }
+        int vertex = 0;
+        Edge* edges = new Edge[e];
+        int edgesSize = 0;
+        bool* isUsed = new bool[e];
+        bool* isVisited = new bool[v];
+        for (int i = 0; i < v; i++){
+            isVisited[i] = false;
+        }
         for(int i = 0; i < v - 1; i++){
-            for (int j = 0; j < v + 1; j++){
-                std::cout << mst[i * (v + 1) + j] << ", ";
+            isVisited[vertex] = true;
+            ListElement<std::pair<int, int>>* currentElement = list->getElementDouble(vertex)->getFirstElement();
+            while(currentElement != nullptr){
+                if(!isVisited[currentElement->getValue().first]){
+                    edges[edgesSize].setEdge(currentElement->getValue().second, vertex, currentElement->getValue().first);
+                    edgesSize++;
+                }
+                currentElement = currentElement->getNextElement();
             }
-            std::cout << std::endl;
+            insertionSort(edges, edgesSize);
+            for(int j = 0; j < edgesSize; j++){
+                if(edges[j].getWeight() > 0 && edges[j].getWeight() < INT_MAX && !isVisited[edges[j].getSecondVertex()]) {
+                    mst->getElementDouble(edges[j].getFirstVertex())->addElementDouble({edges[j].getSecondVertex(), edges[j].getWeight()});
+                    vertex = edges[j].getSecondVertex();
+                    edges[j].setWeight(INT_MAX);
+                    break;
+                }
+            }
+            delete currentElement;
         }
 
         delete[] edges;
