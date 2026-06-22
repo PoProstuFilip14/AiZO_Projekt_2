@@ -2,6 +2,8 @@
 #include "List.h"
 
 namespace algorithms {
+    int defaultSize = -1;
+    int defaultLength = -1;
 
     //implementacja sortowania przez wstawianie dla tablicy
     template <typename T>
@@ -107,5 +109,142 @@ namespace algorithms {
         delete[] edges;
         delete[] isUsed;
         delete[] isVisited;
+    }
+
+    void dijkstraAlgorithm(int* matrix, int* &shortestPath, int v, int e, int start, int finish, int& numberOfEdges, int& length) {
+        bool* isVisited = new bool[v];
+        int* d = new int[v];
+        int* p = new int[v];
+        int currentVertex = start;
+
+        for (int i = 0; i < v; i++) {
+            isVisited[i] = false;
+            d[i] = INT_MAX;
+            p[i] = -1;
+        }
+        d[currentVertex] = 0;
+
+        for (int i = 0; i < v; i++) {
+            isVisited[currentVertex] = true;
+
+            for (int j = 0; j < e; j++) {
+                if(matrix[j * (v + 1) + currentVertex] > 0){
+                    for (int k = 0; k < v; k++){
+                        if(matrix[j * (v + 1) + k] < 0 && d[k] > d[currentVertex] + matrix[j * (v + 1) + v]){
+                            d[k] = d[currentVertex] + matrix[j * (v + 1) + v];
+                            p[k] = currentVertex;
+                        }
+                    }
+                }
+            }
+
+            int shortestVertex = INT_MAX;
+            int newVertex = -1;
+            for(int i = 0; i < v; i++){
+                if(!isVisited[i] && shortestVertex > d[i]){
+                    shortestVertex = d[i];
+                    newVertex = i;
+                }
+            }
+
+            if(newVertex != -1){
+                currentVertex = newVertex;
+            }
+        }
+
+        int size = 1;
+        int* initialPath = new int[v];
+        currentVertex = finish;
+        initialPath[0] = finish;
+        while(currentVertex != start){
+            currentVertex = p[currentVertex];
+            initialPath[size] = currentVertex;
+            size++;
+        }
+
+        shortestPath = new int[size];
+        for(int i = 0; i < size; i++){
+            shortestPath[size - i - 1] = initialPath[i];
+        }
+
+        numberOfEdges = size;
+        length = d[finish];
+        
+        delete[] isVisited;
+        delete[] p;
+        delete[] d;
+        delete[] initialPath;
+    }
+
+    void dijkstraAlgorithm(List<List<std::pair<int, int>>*>* list, List<int>* &shortestPath, int v, int start, int finish, int& numberOfEdges, int& length) {
+        bool* isVisited = new bool[v];
+        int* d = new int[v];
+        int* p = new int[v];
+        int currentVertex = start;
+
+        for (int i = 0; i < v; i++) {
+            isVisited[i] = false;
+            d[i] = INT_MAX;
+            p[i] = -1;
+        }
+        d[currentVertex] = 0;
+
+        /*for (int i = 0; i < v; i++){
+            ListElement<std::pair<int, int>>* currentVertex = list->getElementDouble(i)->getFirstElement();
+            std::cout << i << " ";
+            while(currentVertex != nullptr){
+                std::cout << currentVertex->getValue().first << " ";
+                currentVertex = currentVertex->getNextElement();
+            }
+            std::cout << std::endl;
+        }*/
+
+        for (int i = 0; i < v; i++) {
+            isVisited[currentVertex] = true;
+
+            ListElement<std::pair<int, int>>* currentElement = list->getElementDouble(currentVertex)->getFirstElement();
+            while(currentElement != nullptr){
+                if(d[currentElement->getValue().first] > d[currentVertex] + currentElement->getValue().second){
+                    d[currentElement->getValue().first] = d[currentVertex] + currentElement->getValue().second;
+                    p[currentElement->getValue().first] = currentVertex;
+                }
+                currentElement = currentElement->getNextElement();
+            }
+
+            int shortestVertex = INT_MAX;
+            int newVertex = -1;
+            for(int i = 0; i < v; i++){
+                if(!isVisited[i] && shortestVertex > d[i]){
+                    shortestVertex = d[i];
+                    newVertex = i;
+                }
+            }
+
+            if(newVertex != -1){
+                currentVertex = newVertex;
+            }
+        }
+
+        int size = 1;
+        int* initialPath = new int[v];
+        currentVertex = finish;
+        initialPath[0] = finish;
+        while(currentVertex != start){
+            currentVertex = p[currentVertex];
+            initialPath[size] = currentVertex;
+            size++;
+        }
+
+        for(int i = 0; i < size; i++){
+            shortestPath->addElement(initialPath[size - i - 1]);
+        }
+
+        numberOfEdges = size;
+        length = d[finish];
+        
+        delete[] isVisited;
+        delete[] p;
+        delete[] d;
+        delete[] initialPath;
     }
 }

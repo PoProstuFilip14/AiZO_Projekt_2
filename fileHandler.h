@@ -13,9 +13,11 @@ namespace fileHandler{
 
     void deleteFile(std::string fileName);
     
-    int* readFile(std::string fileName, int& v, int& e);
+    int* readFile(std::string fileName, int& v, int& e, bool isAsymmetric);
 
     void writeResults(std::string fileName, Result* results, int iterations, int structureSize);
 
     void saveSorted(int* matrix, std::string fileName, int v, int e);
+
+    void saveSortedPath(int* result, std::string fileName, int size, int length);
 };

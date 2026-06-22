@@ -51,7 +51,7 @@ namespace fileHandler{
     }
             
     //funkcja czytająca dane wejściowe z pliku
-    int* readFile(std::string fileName, int& v, int& e) {
+    int* readFile(std::string fileName, int& v, int& e, bool isAsymmetric) {
         std::ifstream ff(fileName);
 
         if (!ff) {
@@ -64,7 +64,12 @@ namespace fileHandler{
         int* matrix = new int[e * (v + 1)];
         for (int i = 0; i < e; i++) {
             for (int j = 0; j < v + 1; j++) {
-                matrix[i * (v + 1) + j] = -1;
+                if(!isAsymmetric){
+                    matrix[i * (v + 1) + j] = -1;
+                }
+                else{
+                    matrix[i * (v + 1) + j] = 0;
+                }
             }
         }
 
@@ -75,7 +80,12 @@ namespace fileHandler{
 
             matrix[i * (v + 1) + v] = weight;
             matrix[i * (v + 1) + firstVertex] = 1;
-            matrix[i * (v + 1) + secondVertex] = 1;
+            if(!isAsymmetric){
+                matrix[i * (v + 1) + secondVertex] = 1;
+            }
+            else{
+                matrix[i * (v + 1) + secondVertex] = -1;
+            }
         }
 
         ff.close();
@@ -128,7 +138,6 @@ namespace fileHandler{
     
     //funkcja zapisująca posortowane dane do pliku
     void saveSorted(int* matrix, std::string fileName, int v, int e){
-        deleteFile(fileName);
         std::fstream ftimes;
         std::fstream ferrors;
         ftimes.open(fileName, std::ios::out | std::ios::app);
@@ -151,6 +160,21 @@ namespace fileHandler{
             }
             int weigth = matrix[i * (v + 1) + v];
             ftimes << firstVertex << "  " << secondVertex << "  " << weigth << "\n";
+        }
+    }
+
+    void saveSortedPath(int* result, std::string fileName, int size, int length){
+        std::fstream ftimes;
+        std::fstream ferrors;
+        ftimes.open(fileName, std::ios::out | std::ios::app);
+        //checking if files were found and opened correctly
+        if (!ftimes.is_open()) {
+            std::cout << "File not found!!!\n";
+            return;
+        }
+        ftimes << size << "    " << length << "\n";
+        for (int i = 0; i < size; i++) {
+            ftimes << result[i] << "\n";
         }
     };
 };
