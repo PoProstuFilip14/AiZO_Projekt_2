@@ -1,5 +1,6 @@
 #include "Edge.h"
 #include "List.h"
+#include <climits>
 
 namespace algorithms {
     int defaultSize = -1;

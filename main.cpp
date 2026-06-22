@@ -1,5 +1,6 @@
 #include <ctime>
 #include <iostream>
+#include <climits>
 #include "Parameters.h"
 #include "fileHandler.h"
 #include "List.h"
